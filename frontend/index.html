@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Compose DevOps App</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 25px;
+        }
+
+        button {
+            padding: 10px 18px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #2563eb;
+            color: white;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #result {
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #f3f4f6;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🐳 Docker Compose DevOps App</h1>
+
+    <p class="subtitle">
+        Nginx + Flask + PostgreSQL
+    </p>
+
+    <button onclick="checkBackend()">Check Backend</button>
+
+    <button onclick="loadUsers()">Load Users</button>
+
+    <p id="result"></p>
+
+    <table id="usersTable" class="hidden">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+
+        <tbody id="usersBody"></tbody>
+    </table>
+
+</div>
+
+<script>
+
+async function checkBackend() {
+
+    const result = document.getElementById("result");
+
+    try {
+
+        const response = await fetch("/api/health");
+
+        const data = await response.json();
+
+        result.textContent = "✅ " + data.message;
+
+    } catch (error) {
+
+        result.textContent = "❌ Backend unavailable";
+
+    }
+}
+
+
+async function loadUsers() {
+
+    const result = document.getElementById("result");
+    const table = document.getElementById("usersTable");
+    const body = document.getElementById("usersBody");
+
+    try {
+
+        const response = await fetch("/api/users");
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch users");
+        }
+
+        const users = await response.json();
+
+        body.innerHTML = "";
+
+        users.forEach(user => {
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${user.id}</td>
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+            `;
+
+            body.appendChild(row);
+
+        });
+
+        table.classList.remove("hidden");
+
+        result.textContent = `✅ ${users.length} users loaded`;
+
+    } catch (error) {
+
+        result.textContent = "❌ Unable to load users";
+
+    }
+}
+
+</script>
+
+</body>
+</html>
