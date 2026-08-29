@@ -1,0 +1,39 @@
+name: Docker Compose CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker Compose services
+        run: docker compose build
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Check running containers
+        run: docker compose ps
+
+      - name: Test backend health
+        run: |
+          sleep 5
+          curl --fail http://localhost:8080/api/health
+
+      - name: Test database health
+        run: |
+          curl --fail http://localhost:8080/api/db-health
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v
