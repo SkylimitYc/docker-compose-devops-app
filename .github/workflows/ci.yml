@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,6 +28,10 @@ jobs:
           docker compose up -d || {
             echo "=== DATABASE LOGS ==="
             docker compose logs database
+            echo "=== BACKEND LOGS ==="
+            docker compose logs backend
+            echo "=== FRONTEND LOGS ==="
+            docker compose logs frontend
             echo "=== ALL CONTAINER STATUS ==="
             docker compose ps -a
             exit 1
@@ -40,6 +48,44 @@ jobs:
       - name: Test database health
         run: |
           curl --fail http://localhost:8080/api/db-health
+
+      - name: Test users API
+        run: |
+          curl --fail http://localhost:8080/api/users
+
+      - name: Publish Docker images to GHCR
+        if: github.event_name == 'push'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+            -u "${{ github.actor }}" \
+            --password-stdin
+
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+          BACKEND_IMAGE="ghcr.io/$OWNER/docker-compose-devops-app-backend"
+          FRONTEND_IMAGE="ghcr.io/$OWNER/docker-compose-devops-app-frontend"
+
+          docker tag docker-compose-devops-app-backend:latest \
+            "$BACKEND_IMAGE:${{ github.sha }}"
+
+          docker tag docker-compose-devops-app-backend:latest \
+            "$BACKEND_IMAGE:latest"
+
+          docker tag docker-compose-devops-app-frontend:latest \
+            "$FRONTEND_IMAGE:${{ github.sha }}"
+
+          docker tag docker-compose-devops-app-frontend:latest \
+            "$FRONTEND_IMAGE:latest"
+
+          docker push "$BACKEND_IMAGE:${{ github.sha }}"
+          docker push "$BACKEND_IMAGE:latest"
+
+          docker push "$FRONTEND_IMAGE:${{ github.sha }}"
+          docker push "$FRONTEND_IMAGE:latest"
+
+      - name: Show container logs
+        if: failure()
+        run: docker compose logs
 
       - name: Stop services
         if: always()
