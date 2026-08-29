@@ -32,7 +32,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-devopsuser}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devopspass}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U devopsuser -d devopsdb}"]
+      test: ["CMD-SHELL", "pg_isready -U devopsuser -d devopsdb"]
       interval: 5s
       timeout: 5s
       retries: 5
