@@ -1,179 +1,731 @@
+
+
+Docker compose app · HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Docker Compose demo — Nginx, Flask and PostgreSQL wired together with health checks.">
+    <meta name="theme-color" content="#fdf6ee">
+ 
     <title>Docker Compose DevOps App</title>
-
+ 
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23fdf6ee'/%3E%3Cpath d='M6 13h3v3H6zM10 13h3v3h-3zM6 9h3v3H6zM10 9h3v3h-3zM14 9h3v3h-3zM6 17c1 1.6 3 2.4 6 2 2-.3 3.6-1.2 5-3' stroke='%23e8927c' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+ 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+ 
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-
+ 
+        :root {
+            --bg: #fdf6ee;
+            --surface: #ffffff;
+            --surface-2: #fff9f2;
+            --border: #f0e2d3;
+            --border-hover: #e6cfb5;
+ 
+            --text: #4a3f35;
+            --text-dim: #8a7b6c;
+            --text-mute: #b5a796;
+ 
+            --accent: #e8927c;
+            --accent-soft: rgba(232, 146, 124, 0.14);
+            --accent-2: #c9b6e4;
+            --accent-2-soft: rgba(201, 182, 228, 0.18);
+            --mint: #7fc9b9;
+            --mint-soft: rgba(127, 201, 185, 0.16);
+            --danger: #e6786f;
+            --danger-soft: rgba(230, 120, 111, 0.12);
+ 
+            --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+            --font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+            --font-mono: "JetBrains Mono", "Courier New", monospace;
+ 
+            --ease: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+ 
         body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #1f2937;
+            min-height: 100vh;
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+ 
+            background-image:
+                radial-gradient(circle at 10% 0%, rgba(232, 146, 124, 0.12), transparent 34%),
+                radial-gradient(circle at 92% 18%, rgba(201, 182, 228, 0.14), transparent 32%),
+                radial-gradient(circle at 30% 95%, rgba(127, 201, 185, 0.12), transparent 34%);
         }
-
-        .container {
-            max-width: 900px;
-            margin: 60px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+ 
+        .wrap {
+            width: min(880px, 92%);
+            margin: 0 auto;
+            padding: 56px 0 70px;
         }
-
+ 
+        /* Marquee */
+ 
+        .marquee {
+            margin-top: 18px;
+            padding: 10px 0;
+ 
+            overflow: hidden;
+            border-top: 1px dashed var(--border);
+            border-bottom: 1px dashed var(--border);
+        }
+ 
+        .marquee-track {
+            display: flex;
+            width: max-content;
+            gap: 28px;
+ 
+            animation: scroll-left 16s linear infinite;
+        }
+ 
+        .marquee-track span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+ 
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+ 
+        @keyframes scroll-left {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+ 
+        @media (prefers-reduced-motion: reduce) {
+            .marquee-track { animation: none; }
+        }
+ 
+        header {
+            margin-bottom: 30px;
+        }
+ 
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+ 
+            padding: 6px 12px;
+            border-radius: 50px;
+            border: 1px solid rgba(232, 146, 124, 0.3);
+            background: var(--accent-soft);
+ 
+            color: #a85f47;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+ 
+        .badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+ 
         h1 {
-            margin-bottom: 8px;
+            margin-top: 18px;
+ 
+            font-family: var(--font-display);
+            font-size: clamp(1.9rem, 4vw, 2.5rem);
+            font-weight: 700;
+            letter-spacing: -0.3px;
         }
-
-        .subtitle {
-            color: #6b7280;
-            margin-bottom: 25px;
-        }
-
-        button {
-            padding: 10px 18px;
+ 
+        h1 .icon {
+            display: inline-flex;
+            width: 32px;
+            height: 32px;
+            vertical-align: -6px;
             margin-right: 10px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            background: #2563eb;
-            color: white;
-            font-size: 14px;
+            color: var(--accent);
         }
-
-        button:hover {
-            background: #1d4ed8;
+ 
+        h1 .icon svg { width: 100%; height: 100%; }
+ 
+        .subtitle {
+            margin-top: 10px;
+            color: var(--text-dim);
+            font-size: 1rem;
         }
-
-        #result {
-            margin: 20px 0;
-            font-weight: bold;
+ 
+        /* Architecture strip */
+ 
+        .arch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+ 
+            margin-top: 26px;
+            padding: 18px;
+ 
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--surface);
+            box-shadow: 0 10px 30px rgba(184, 148, 112, 0.08);
+ 
+            overflow-x: auto;
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
+ 
+        .arch-node {
+            flex-shrink: 0;
+ 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+ 
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+ 
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text);
+            white-space: nowrap;
+ 
+            transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), border-color 0.2s var(--ease);
+        }
+ 
+        .arch-node:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 20px rgba(232, 146, 124, 0.18);
+        }
+ 
+        .arch-node .swatch {
+            width: 8px;
+            height: 8px;
+            border-radius: 3px;
+            background: var(--accent);
+        }
+ 
+        .arch-arrow {
+            flex-shrink: 0;
+            color: var(--text-mute);
+        }
+ 
+        /* Service status cards */
+ 
+        .services {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+ 
             margin-top: 20px;
         }
-
-        th,
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
+ 
+        .service-card {
+            padding: 18px;
+ 
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--surface);
+            box-shadow: 0 8px 20px rgba(184, 148, 112, 0.06);
+ 
+            opacity: 0;
+            transform: translateY(14px);
+            transition: opacity 0.5s var(--ease), transform 0.5s var(--ease),
+                border-color 0.2s var(--ease);
+        }
+ 
+        .service-card.is-visible {
+            opacity: 1;
+            transform: none;
+        }
+ 
+        .service-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-6px) scale(1.015);
+            box-shadow: 0 16px 30px rgba(184, 148, 112, 0.16);
+        }
+ 
+        .service-card:nth-child(1) { border-top: 3px solid var(--accent); }
+        .service-card:nth-child(2) { border-top: 3px solid var(--accent-2); }
+        .service-card:nth-child(3) { border-top: 3px solid var(--mint); }
+ 
+        .service-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+ 
+        .service-name {
+            font-family: var(--font-mono);
+            font-size: 0.84rem;
+            font-weight: 500;
+        }
+ 
+        .service-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+ 
+            padding: 3px 9px;
+            border-radius: 50px;
+ 
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 500;
+        }
+ 
+        .service-pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+ 
+        .service-pill.idle {
+            color: var(--text-mute);
+            background: #f4ece1;
+        }
+        .service-pill.idle .dot { background: var(--text-mute); }
+ 
+        .service-pill.ok {
+            color: #3f7d6c;
+            background: var(--mint-soft);
+        }
+        .service-pill.ok .dot { background: var(--mint); }
+ 
+        .service-pill.err {
+            color: #a3453c;
+            background: var(--danger-soft);
+        }
+        .service-pill.err .dot { background: var(--danger); }
+ 
+        .service-desc {
+            margin-top: 10px;
+            color: var(--text-mute);
+            font-size: 0.78rem;
+        }
+ 
+        /* Card */
+ 
+        .card {
+            margin-top: 28px;
+            padding: 28px;
+ 
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--surface);
+            box-shadow: 0 20px 50px rgba(184, 148, 112, 0.1);
+ 
+            opacity: 0;
+            transform: translateY(14px);
+            animation: fadeUp 0.6s var(--ease) 0.15s forwards;
+            transition: box-shadow 0.25s var(--ease);
+        }
+ 
+        .card:hover {
+            box-shadow: 0 26px 60px rgba(184, 148, 112, 0.16);
+        }
+ 
+        @keyframes fadeUp {
+            to { opacity: 1; transform: none; }
+        }
+ 
+        .card h2 {
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+ 
+        .card-sub {
+            margin-top: 4px;
+            margin-bottom: 20px;
+ 
+            color: var(--text-mute);
+            font-size: 0.86rem;
+        }
+ 
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+ 
+        button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+ 
+            padding: 11px 18px;
+            border: none;
+            border-radius: 50px;
+ 
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.86rem;
+            cursor: pointer;
+ 
+            transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+        }
+ 
+        button:active {
+            transform: translateY(1px);
+        }
+ 
+        .btn-primary {
+            background: var(--accent);
+            color: #fff7f2;
+        }
+ 
+        .btn-primary:hover {
+            box-shadow: 0 12px 26px rgba(232, 146, 124, 0.35);
+            transform: translateY(-2px);
+        }
+ 
+        .btn-secondary {
+            background: var(--accent-2-soft);
+            border: 1px solid rgba(201, 182, 228, 0.4);
+            color: #6b5a92;
+        }
+ 
+        .btn-secondary:hover {
+            border-color: var(--accent-2);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(201, 182, 228, 0.3);
+        }
+ 
+        button:disabled {
+            opacity: 0.6;
+            cursor: progress;
+        }
+ 
+        .spinner {
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            border-top-color: currentColor;
+            animation: spin 0.7s linear infinite;
+        }
+ 
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+ 
+        /* Result banner */
+ 
+        #result {
+            display: none;
+            align-items: center;
+            gap: 10px;
+ 
+            margin-top: 20px;
+            padding: 12px 16px;
+ 
+            border-radius: 12px;
+            border: 1px solid var(--border);
+ 
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+ 
+        #result.show { display: flex; }
+ 
+        #result.ok {
+            border-color: rgba(127, 201, 185, 0.35);
+            background: var(--mint-soft);
+            color: #3f7d6c;
+        }
+ 
+        #result.err {
+            border-color: rgba(230, 120, 111, 0.3);
+            background: var(--danger-soft);
+            color: #a3453c;
+        }
+ 
+        /* Table */
+ 
+        table {
+            width: 100%;
+            margin-top: 22px;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+ 
+        thead th {
+            padding: 10px 12px;
+ 
+            border-bottom: 1px solid var(--border);
+ 
+            color: var(--text-mute);
+            font-family: var(--font-mono);
+            font-size: 0.74rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             text-align: left;
         }
-
-        th {
-            background: #f3f4f6;
+ 
+        tbody td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
         }
-
+ 
+        tbody tr:hover {
+            background: var(--surface-2);
+        }
+ 
+        tbody td:first-child {
+            color: var(--text-mute);
+            font-family: var(--font-mono);
+        }
+ 
         .hidden {
             display: none;
         }
+ 
+        .empty-state {
+            margin-top: 18px;
+            padding: 26px;
+ 
+            text-align: center;
+            color: var(--text-mute);
+            font-size: 0.88rem;
+ 
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            background: var(--surface-2);
+        }
+ 
+        footer {
+            margin-top: 34px;
+            color: var(--text-mute);
+            font-size: 0.82rem;
+            font-family: var(--font-mono);
+        }
+ 
+        @media (max-width: 560px) {
+            .wrap {
+                padding: 40px 0 50px;
+            }
+            .services {
+                grid-template-columns: 1fr;
+            }
+            .actions {
+                flex-direction: column;
+            }
+            button {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
-
+ 
 <body>
-
-<div class="container">
-
-    <h1>🐳 Docker Compose DevOps App</h1>
-
-    <p class="subtitle">
-        Nginx + Flask + PostgreSQL
-    </p>
-
-    <button onclick="checkBackend()">Check Backend</button>
-
-    <button onclick="loadUsers()">Load Users</button>
-
-    <p id="result"></p>
-
-    <table id="usersTable" class="hidden">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-            </tr>
-        </thead>
-
-        <tbody id="usersBody"></tbody>
-    </table>
-
+ 
+<div class="wrap">
+ 
+    <header>
+        <span class="badge">
+            <span class="dot"></span>
+            docker compose up
+        </span>
+ 
+        <h1>
+            <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="10" width="4" height="4" fill="currentColor"/><rect x="8" y="10" width="4" height="4" fill="currentColor"/><rect x="8" y="5" width="4" height="4" fill="currentColor"/><rect x="13" y="10" width="4" height="4" fill="currentColor"/><path d="M3 15c1.5 3 5 5 9 4.2 3.3-.7 6-2.8 8-6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+            </span>Docker Compose DevOps App 🐳
+        </h1>
+ 
+        <p class="subtitle">Three containers, one network — Nginx in front, Flask underneath, PostgreSQL holding the data. 🚀</p>
+ 
+        <div class="marquee" aria-hidden="true">
+            <div class="marquee-track">
+                <span>🐳 dockerized</span>
+                <span>🔗 networked</span>
+                <span>🐍 flask api</span>
+                <span>🐘 postgres db</span>
+                <span>🌐 nginx proxy</span>
+                <span>✅ health-checked</span>
+                <span>🐳 dockerized</span>
+                <span>🔗 networked</span>
+                <span>🐍 flask api</span>
+                <span>🐘 postgres db</span>
+                <span>🌐 nginx proxy</span>
+                <span>✅ health-checked</span>
+            </div>
+        </div>
+ 
+        <div class="arch">
+            <div class="arch-node"><span class="swatch"></span>🧑‍💻 Browser</div>
+            <span class="arch-arrow">→</span>
+            <div class="arch-node"><span class="swatch"></span>🌐 Nginx :80</div>
+            <span class="arch-arrow">→</span>
+            <div class="arch-node"><span class="swatch"></span>🐍 Flask API :5000</div>
+            <span class="arch-arrow">→</span>
+            <div class="arch-node"><span class="swatch"></span>🐘 PostgreSQL :5432</div>
+        </div>
+ 
+        <div class="services">
+            <div class="service-card" id="svc-nginx">
+                <div class="service-top">
+                    <span class="service-name">🌐 nginx</span>
+                    <span class="service-pill idle" id="svc-nginx-pill"><span class="dot"></span>idle</span>
+                </div>
+                <p class="service-desc">Reverse proxy — routes /api to Flask.</p>
+            </div>
+ 
+            <div class="service-card" id="svc-flask">
+                <div class="service-top">
+                    <span class="service-name">🐍 flask</span>
+                    <span class="service-pill idle" id="svc-flask-pill"><span class="dot"></span>idle</span>
+                </div>
+                <p class="service-desc">API layer — checked via /api/health.</p>
+            </div>
+ 
+            <div class="service-card" id="svc-postgres">
+                <div class="service-top">
+                    <span class="service-name">🐘 postgres</span>
+                    <span class="service-pill idle" id="svc-postgres-pill"><span class="dot"></span>idle</span>
+                </div>
+                <p class="service-desc">Database — checked via /api/users.</p>
+            </div>
+        </div>
+    </header>
+ 
+    <div class="card">
+        <h2>Live checks ⚡</h2>
+        <p class="card-sub">Hits the API through Nginx — nothing here is faked or cached.</p>
+ 
+        <div class="actions">
+            <button class="btn-primary" id="btnHealth" onclick="checkBackend()">🩺 Check backend health</button>
+            <button class="btn-secondary" id="btnUsers" onclick="loadUsers()">📋 Load users from DB</button>
+        </div>
+ 
+        <p id="result"></p>
+ 
+        <table id="usersTable" class="hidden">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+        </table>
+ 
+        <div id="emptyState" class="empty-state hidden">No users returned by the API yet.</div>
+    </div>
+ 
+    <footer>✨ project 2 · docker-compose-app · Yashank Choudhary</footer>
+ 
 </div>
-
+ 
 <script>
-
-async function checkBackend() {
-
+ 
+function setPill(id, state, text) {
+    const pill = document.getElementById(id);
+    if (!pill) return;
+    pill.className = "service-pill " + state;
+    pill.innerHTML = `<span class="dot"></span>${text}`;
+}
+ 
+window.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".service-card").forEach((el, i) => {
+        setTimeout(() => el.classList.add("is-visible"), 120 + i * 90);
+    });
+});
+ 
+function setLoading(button, isLoading, label) {
+    button.disabled = isLoading;
+    button.innerHTML = isLoading
+        ? `<span class="spinner"></span>${label}`
+        : button.dataset.label;
+}
+ 
+function showResult(message, ok) {
     const result = document.getElementById("result");
-
+    result.textContent = message;
+    result.className = "show " + (ok ? "ok" : "err");
+}
+ 
+async function checkBackend() {
+    const btn = document.getElementById("btnHealth");
+    btn.dataset.label = btn.dataset.label || btn.innerHTML;
+    setLoading(btn, true, "Checking…");
+ 
     try {
-
         const response = await fetch("/api/health");
-
+        if (!response.ok) throw new Error("bad status");
         const data = await response.json();
-
-        result.textContent = "✅ " + data.message;
-
+        showResult("✅ Backend healthy — " + (data.message || "OK"), true);
+        setPill("svc-nginx-pill", "ok", "reachable");
+        setPill("svc-flask-pill", "ok", "healthy");
     } catch (error) {
-
-        result.textContent = "❌ Backend unavailable";
-
+        showResult("⚠️ Backend unavailable — is the Flask container running?", false);
+        setPill("svc-nginx-pill", "err", "no response");
+        setPill("svc-flask-pill", "err", "down");
+    } finally {
+        setLoading(btn, false);
     }
 }
-
-
+ 
 async function loadUsers() {
-
-    const result = document.getElementById("result");
+    const btn = document.getElementById("btnUsers");
+    btn.dataset.label = btn.dataset.label || btn.innerHTML;
+    setLoading(btn, true, "Loading…");
+ 
     const table = document.getElementById("usersTable");
     const body = document.getElementById("usersBody");
-
+    const empty = document.getElementById("emptyState");
+ 
     try {
-
         const response = await fetch("/api/users");
-
-        if (!response.ok) {
-            throw new Error("Failed to fetch users");
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch users");
         const users = await response.json();
-
+ 
         body.innerHTML = "";
-
-        users.forEach(user => {
-
+ 
+        setPill("svc-postgres-pill", "ok", "connected");
+ 
+        if (!users.length) {
+            table.classList.add("hidden");
+            empty.classList.remove("hidden");
+            showResult("📭 Connected — 0 users in the database", true);
+            return;
+        }
+ 
+        empty.classList.add("hidden");
+ 
+        users.forEach((user) => {
             const row = document.createElement("tr");
-
             row.innerHTML = `
                 <td>${user.id}</td>
                 <td>${user.name}</td>
                 <td>${user.email}</td>
             `;
-
             body.appendChild(row);
-
         });
-
+ 
         table.classList.remove("hidden");
-
-        result.textContent = `✅ ${users.length} users loaded`;
-
+        showResult(`🎉 Loaded ${users.length} user${users.length === 1 ? "" : "s"} from PostgreSQL`, true);
     } catch (error) {
-
-        result.textContent = "❌ Unable to load users";
-
+        showResult("⚠️ Unable to load users — check the API and DB containers", false);
+        setPill("svc-postgres-pill", "err", "unreachable");
+    } finally {
+        setLoading(btn, false);
     }
 }
-
+ 
 </script>
-
+ 
 </body>
 </html>
+ 
