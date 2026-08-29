@@ -19,7 +19,7 @@ jobs:
       - name: Build Docker Compose services
         run: docker compose build
 
-            - name: Start services
+      - name: Start services
         run: |
           docker compose up -d || {
             echo "=== DATABASE LOGS ==="
