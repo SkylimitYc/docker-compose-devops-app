@@ -19,8 +19,15 @@ jobs:
       - name: Build Docker Compose services
         run: docker compose build
 
-      - name: Start services
-        run: docker compose up -d
+            - name: Start services
+        run: |
+          docker compose up -d || {
+            echo "=== DATABASE LOGS ==="
+            docker compose logs database
+            echo "=== ALL CONTAINER STATUS ==="
+            docker compose ps -a
+            exit 1
+          }
 
       - name: Check running containers
         run: docker compose ps
