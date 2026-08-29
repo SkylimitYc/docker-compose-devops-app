@@ -1,0 +1,44 @@
+services:
+
+  backend:
+    image: ghcr.io/skylimityc/docker-compose-devops-app-backend:latest
+    container_name: devops-backend-prod
+    expose:
+      - "5000"
+    environment:
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: devopsdb
+      DB_USER: devopsuser
+      DB_PASSWORD: devopspass
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    image: ghcr.io/skylimityc/docker-compose-devops-app-frontend:latest
+    container_name: devops-frontend-prod
+    ports:
+      - "8081:80"
+    depends_on:
+      backend:
+        condition: service_started
+
+  database:
+    image: postgres:16-alpine
+    container_name: devops-database-prod
+    environment:
+      POSTGRES_DB: devopsdb
+      POSTGRES_USER: devopsuser
+      POSTGRES_PASSWORD: devopspass
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devopsuser -d devopsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  postgres_prod_data:
