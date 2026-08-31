@@ -1,0 +1,68 @@
+name: Docker Compose CD
+
+on:
+  workflow_run:
+    workflows:
+      - Docker Compose CI
+    types:
+      - completed
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+            -u "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Pull production images
+        run: |
+          docker compose -f docker-compose.prod.yml pull
+
+      - name: Deploy production stack
+        run: |
+          docker compose -f docker-compose.prod.yml up -d
+
+      - name: Check running containers
+        run: |
+          docker compose -f docker-compose.prod.yml ps
+
+      - name: Test backend health
+        run: |
+          sleep 10
+          curl --fail http://localhost:8081/api/health
+
+      - name: Test database health
+        run: |
+          curl --fail http://localhost:8081/api/db-health
+
+      - name: Test users API
+        run: |
+          curl --fail http://localhost:8081/api/users
+
+      - name: Show container logs
+        if: failure()
+        run: |
+          docker compose -f docker-compose.prod.yml logs
+
+      - name: Stop production stack
+        if: always()
+        run: |
+          docker compose -f docker-compose.prod.yml down -v
